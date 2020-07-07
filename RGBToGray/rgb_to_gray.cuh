@@ -4,7 +4,6 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 
-#define BLOCK_SIZE 64
 
 __global__ void rgb2grayincuda(uchar3 * const d_in, unsigned char * const d_out, 
                                 uint imgheight, uint imgwidth);

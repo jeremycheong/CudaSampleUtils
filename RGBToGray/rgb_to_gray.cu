@@ -26,8 +26,10 @@ void Rgb2Gray(const cv::Mat &src, cv::Mat &gray)
 
     cudaMemcpy(d_in, src.data, imgwidth * imgheight * sizeof(uchar3), cudaMemcpyHostToDevice);
 
-    int grid_dim = (imgheight * imgwidth) / BLOCK_SIZE + 1;
-    rgb2grayincuda<<<grid_dim, BLOCK_SIZE>>>(d_in, d_out, imgheight, imgwidth);
+    dim3 threadsPerBlock(64, 64);
+    dim3 blocksPerGrid((imgwidth + threadsPerBlock.x - 1) / threadsPerBlock.x,
+        (imgheight + threadsPerBlock.y - 1) / threadsPerBlock.y);
+    rgb2grayincuda<<<blocksPerGrid, threadsPerBlock>>>(d_in, d_out, imgheight, imgwidth);
     cudaDeviceSynchronize();
 
     gray = cv::Mat::zeros(imgheight, imgwidth, CV_8UC1);
