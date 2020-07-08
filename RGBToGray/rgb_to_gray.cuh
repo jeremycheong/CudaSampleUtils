@@ -5,10 +5,27 @@
 #include <string>
 
 
-__global__ void rgb2grayincuda(uchar3 * const d_in, unsigned char * const d_out, 
-                                uint imgheight, uint imgwidth);
+void rgb2graycpu(uchar3* const in, unsigned char* out, uint imgheight, uint imgwidth)
+{
+    for (uint i = 0; i < imgheight; i ++)
+    {
+        for (uint j = 0; j < imgwidth; j ++)
+        {
+            uchar3 in_data = in[i * imgwidth + j];
+            out[i * imgwidth + j] = 0.299f * in_data.x + 0.587f * in_data.y + 0.114f * in_data.z;
+        }
+    }
+}
 
 void Rgb2Gray(const cv::Mat &src, cv::Mat &gray);
+
+void Rgb2GrayCpu(const cv::Mat &src, cv::Mat &gray)
+{
+    const uint imgheight = src.rows;
+    const uint imgwidth = src.cols;
+    gray = cv::Mat::zeros(imgheight, imgwidth, CV_8UC1);
+    rgb2graycpu((uchar3*)src.data, gray.data, imgheight, imgwidth);
+}
 
 void Rgb2GrayTest()
 {
@@ -17,6 +34,7 @@ void Rgb2GrayTest()
     cv::imshow("IMAGE", org_img);
     cv::Mat gray;
     Rgb2Gray(org_img, gray);
+    // Rgb2GrayCpu(org_img, gray);
     if (gray.empty())
         std::cout << "rgb to gray failed" << std::endl;
     cv::imshow("GRAY", gray);
