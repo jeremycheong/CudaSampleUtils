@@ -29,7 +29,7 @@ void Rgb2GrayCpu(const cv::Mat &src, cv::Mat &gray)
 
 void Rgb2GrayTest()
 {
-    std::string image_path = "../../data/lena.jpg";
+    std::string image_path = "../data/lena.jpg";
     cv::Mat org_img = cv::imread(image_path);
     cv::imshow("IMAGE", org_img);
     cv::Mat gray;
