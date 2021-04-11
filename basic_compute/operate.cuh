@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <cmath>
+#include <iostream>
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
@@ -34,6 +35,9 @@ public:
     // 每隔block所包含的数据完成自己的归约求和。
     Result ReduceSum(const float* data, float &result, uint32_t data_size);
     Result MatrixAdd(const float* matrix_a, float* matrix_b, float* matrix_out, uint32_t width, uint32_t height);
+
+    // matrix_T_data 需外部初始化为全0矩阵
+    Result SparseMatrixTranspose(const float* matrix_data, float* matrix_T_data, uint32_t width, uint32_t height);
 
 private:
     bool gpu_mod_;

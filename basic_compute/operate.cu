@@ -42,8 +42,6 @@ Result Operate::ReduceSum(const float* data, float &result, uint32_t data_size)
     cudaMalloc((void**)&dev_data, bytes_size);
     cudaMalloc((void**)&dev_out, out_size * sizeof(float));
 
-    
-
     cudaMemcpy(dev_data, data, bytes_size, cudaMemcpyHostToDevice);
     cudaDeviceSynchronize();
 
@@ -55,7 +53,7 @@ Result Operate::ReduceSum(const float* data, float &result, uint32_t data_size)
         result += out[i];
     }
     delete[](out);
-    
+
     cudaFree(dev_data);
     cudaFree(dev_out);
 

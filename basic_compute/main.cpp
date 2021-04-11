@@ -2,49 +2,7 @@
 #include "operate.cuh"
 
 #include <iostream>
-
-class Interface
-{
-public:
-    Interface() = default;
-    virtual ~Interface() {INFO_LOG("Interface destroy!"); };
-    virtual void PreProcess() = 0;
-    virtual void Infer() = 0;
-    virtual void PostProcess() = 0;
-};
-
-class ModelInterface : public Interface
-{
-public:
-    ~ModelInterface() {
-        INFO_LOG("ModelInterface destroy!");
-    }
-    void PreProcess() final {
-        INFO_LOG("ModelInterface PreProcess");
-    }
-    void Infer() final {
-        INFO_LOG("ModelInterface Infer");
-    }
-    void PostProcess() final {
-        INFO_LOG("ModelInterface PostProcess");
-    }
-};
-
-void TestInterface()
-{
-    Interface* model_interface = nullptr;
-    model_interface = new ModelInterface();
-    model_interface->PreProcess();
-    model_interface->Infer();
-    model_interface->PostProcess();
-    if (model_interface)
-    {
-        delete(model_interface);
-        model_interface = nullptr;
-    }
-    
-    INFO_LOG("TestInterface Done");
-}
+#include <cstring>
 
 void TestMatrixAdd()
 {
@@ -79,7 +37,6 @@ void TestMatrixAdd()
     INFO_LOG("Done");
 }
 
-
 int TestReduceSum(int argc, char* argv[])
 {
     uint32_t data_size = 1 << 10;
@@ -105,11 +62,47 @@ int TestReduceSum(int argc, char* argv[])
     return 0;
 }
 
+void TestSparseMatrixTranspose()
+{
+    uint32_t data_size = 845;
+    INFO_LOG("data_size: %u", data_size);
+
+    uint32_t width = 65;
+    uint32_t height = data_size / width;
+
+    float* data = new float[data_size];
+    Common::GenerateRangeData(data, data_size);
+    INFO_LOG("Generate data success");
+    float* out_data = new float[data_size];
+    std::memset(out_data, 0, data_size * sizeof(float));
+
+    Operate op;
+    op.SparseMatrixTranspose(data, out_data, width, height);
+    uint32_t out_width = height;
+    uint32_t out_height = width;
+
+    for (uint32_t i = 0; i < out_height; i ++)
+    {
+        std::cout << "========================================== " << i << std::endl;
+        float* row_data = out_data + i * out_width;
+        std::cout << "[ ";
+        for (int j = 0; j < out_width; j ++)
+        {
+            std::cout << row_data[j] << ", ";
+        }
+        std::cout << "]" << std::endl;
+    }
+    delete[](data);
+    delete[](out_data);
+
+    INFO_LOG("Done");
+}
+
 int main(int argc, char* argv[])
 {
-    TestReduceSum(argc, argv);
+    // TestReduceSum(argc, argv);
     // TestMatrixAdd();
-    // TestInterface();
+    TestSparseMatrixTranspose();
 
     return 0;
 }
