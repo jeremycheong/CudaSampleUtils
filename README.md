@@ -1,2 +1,2 @@
 # CudaSample
-cuda sample self
+重新温习cuda编程，想到哪写到哪。是的！就是这么不讲理……
