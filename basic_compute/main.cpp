@@ -98,11 +98,25 @@ void TestSparseMatrixTranspose()
     INFO_LOG("Done");
 }
 
+void TestCvResize()
+{
+    cv::Mat input_image = cv::imread("../data/lena.jpg");
+    cv::Mat resized;
+    Operate op;
+    op.CvResize(input_image, input_image.cols * 2, input_image.rows * 2, resized);
+
+    cv::imshow("lena", input_image);
+    cv::imshow("resized", resized);
+    cv::waitKey(0);
+    cv::destroyAllWindows();
+}
+
 int main(int argc, char* argv[])
 {
     // TestReduceSum(argc, argv);
     // TestMatrixAdd();
-    TestSparseMatrixTranspose();
+    // TestSparseMatrixTranspose();
+    TestCvResize();
 
     return 0;
 }

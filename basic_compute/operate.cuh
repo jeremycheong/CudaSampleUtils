@@ -7,6 +7,7 @@
 #include "device_launch_parameters.h"
 
 #include "common.h"
+#include "opencv2/opencv.hpp"
 
 class Operate
 {
@@ -32,12 +33,17 @@ public:
     }
     ~Operate() = default;
 
-    // 每隔block所包含的数据完成自己的归约求和。
+    // 每个block所包含的数据完成自己的归约求和。
     Result ReduceSum(const float* data, float &result, uint32_t data_size);
     Result MatrixAdd(const float* matrix_a, float* matrix_b, float* matrix_out, uint32_t width, uint32_t height);
 
     // matrix_T_data 需外部初始化为全0矩阵
     Result SparseMatrixTranspose(const float* matrix_data, float* matrix_T_data, uint32_t width, uint32_t height);
+
+    // 最近邻插值实现resize
+    Result CvResize(const cv::Mat &src, const uint32_t &dest_width, const uint32_t &dest_height, cv::Mat &dest);
+
+    // TODO: 双线性插值实现resize
 
 private:
     bool gpu_mod_;

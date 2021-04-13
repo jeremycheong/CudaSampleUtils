@@ -37,10 +37,10 @@ Result Operate::SparseMatrixTranspose(const float* matrix_data, float* matrix_T_
     cudaDeviceSynchronize();
 
     SparseTransposeKernal<<<grid, block_>>>(dev_matrix, dev_matrix_T, width, height);
-
-    cudaMemcpy(matrix_T_data, dev_matrix_T, data_bytes_size, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
 
+    cudaMemcpy(matrix_T_data, dev_matrix_T, data_bytes_size, cudaMemcpyDeviceToHost);
+    
     cudaFree(dev_matrix);
     cudaFree(dev_matrix_T);
 
