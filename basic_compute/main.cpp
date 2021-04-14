@@ -102,8 +102,14 @@ void TestCvResize()
 {
     cv::Mat input_image = cv::imread("../data/lena.jpg");
     cv::Mat resized;
+    cv::Mat cv_resized;
+    // cv::resize(input_image, cv_resized, cv::Size(input_image.cols * 2, input_image.rows * 2), 0.f, 0.f, cv::INTER_NEAREST);
+    cv::resize(input_image, cv_resized, cv::Size(input_image.cols * 2, input_image.rows * 2), 0.f, 0.f, cv::INTER_LINEAR);
+    cv::imshow("cv resize", cv_resized);
+
     Operate op;
-    op.CvResize(input_image, input_image.cols * 2, input_image.rows * 2, resized);
+    // op.CvResize(input_image, input_image.cols * 2, input_image.rows * 2, resized);
+    op.CvBiLinearResize(input_image, input_image.cols * 2, input_image.rows * 2, resized);
 
     cv::imshow("lena", input_image);
     cv::imshow("resized", resized);

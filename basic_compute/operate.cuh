@@ -44,6 +44,7 @@ public:
     Result CvResize(const cv::Mat &src, const uint32_t &dest_width, const uint32_t &dest_height, cv::Mat &dest);
 
     // TODO: 双线性插值实现resize
+    Result CvBiLinearResize(const cv::Mat &src, const uint32_t &dest_width, const uint32_t &dest_height, cv::Mat &dest);
 
 private:
     bool gpu_mod_;
