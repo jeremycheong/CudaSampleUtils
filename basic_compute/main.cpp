@@ -104,17 +104,22 @@ void TestCvResize()
     cv::Mat resized;
     cv::Mat cv_resized;
     // cv::resize(input_image, cv_resized, cv::Size(input_image.cols * 2, input_image.rows * 2), 0.f, 0.f, cv::INTER_NEAREST);
-    cv::resize(input_image, cv_resized, cv::Size(input_image.cols * 2, input_image.rows * 2), 0.f, 0.f, cv::INTER_LINEAR);
-    cv::imshow("cv resize", cv_resized);
+    cv::resize(input_image, cv_resized, cv::Size(640, 640), 0.f, 0.f, cv::INTER_LINEAR);
+    // cv::imshow("cv resize", cv_resized);
 
     Operate op;
     // op.CvResize(input_image, input_image.cols * 2, input_image.rows * 2, resized);
-    op.CvBiLinearResize(input_image, input_image.cols * 2, input_image.rows * 2, resized);
+    // op.CvBiLinearResize(input_image, input_image.cols * 2, input_image.rows * 2, resized);
+    float scale;
+    cv::Rect paste_roi;
+    op.CvPadResize(cv_resized, 640, 384, scale, paste_roi, resized);
 
-    cv::imshow("lena", input_image);
-    cv::imshow("resized", resized);
-    cv::waitKey(0);
-    cv::destroyAllWindows();
+    cv::imwrite("./pad_resized.jpg", resized);
+
+    // cv::imshow("lena", input_image);
+    // cv::imshow("resized", resized);
+    // cv::waitKey(0);
+    // cv::destroyAllWindows();
 }
 
 int main(int argc, char* argv[])

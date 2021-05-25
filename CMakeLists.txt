@@ -9,7 +9,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -O3 -Wall")
 find_package(CUDA REQUIRED)
 include_directories(${CUDA_INCLUDE_DIRS})
 
-set(OpneCV_DIR /home/jeremy/Workspace/3rdLibs/opencv-4.3/opencv/cmake)
+set(OpenCV_DIR /usr/local/opencv3.4/share/OpenCV)
 find_package(OpenCV REQUIRED)
 
 include_directories(${OpenCV_INCLUDE_DIR})

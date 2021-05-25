@@ -43,8 +43,16 @@ public:
     // 最近邻插值实现resize
     Result CvResize(const cv::Mat &src, const uint32_t &dest_width, const uint32_t &dest_height, cv::Mat &dest);
 
-    // TODO: 双线性插值实现resize
+    // 双线性插值实现resize
     Result CvBiLinearResize(const cv::Mat &src, const uint32_t &dest_width, const uint32_t &dest_height, cv::Mat &dest);
+
+    // 等比例resize和减均值除方差
+    Result CvPadResize(const cv::Mat &src, const uint32_t &dest_width, const uint32_t &dest_height, 
+                                    float &scale, cv::Rect &paste_roi, cv::Mat &dest);
+
+private:
+    Result PadResize(const uint32_t &image_width, const uint32_t &image_height, const uint32_t &dest_width, const uint32_t &dest_height, 
+                            cv::Rect &dest_roi, float &scale);
 
 private:
     bool gpu_mod_;
