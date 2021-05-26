@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <memory>
 
 void TestMatrixAdd()
 {
@@ -105,7 +106,7 @@ void TestCvResize()
     cv::Mat cv_resized;
     // cv::resize(input_image, cv_resized, cv::Size(input_image.cols * 2, input_image.rows * 2), 0.f, 0.f, cv::INTER_NEAREST);
     cv::resize(input_image, cv_resized, cv::Size(640, 640), 0.f, 0.f, cv::INTER_LINEAR);
-    // cv::imshow("cv resize", cv_resized);
+    cv::imshow("cv resize", cv_resized);
 
     Operate op;
     // op.CvResize(input_image, input_image.cols * 2, input_image.rows * 2, resized);
@@ -118,8 +119,80 @@ void TestCvResize()
 
     // cv::imshow("lena", input_image);
     // cv::imshow("resized", resized);
+    cv::waitKey(0);
+    cv::destroyAllWindows();
+}
+
+void TestCvPadResizeNormal()
+{
+    cv::Mat input_image = cv::imread("../data/lena.jpg");
+
+    int width = input_image.cols;
+    int height = input_image.rows;
+    int c = input_image.channels();
+    int resized_out_w = 640;
+    int resized_out_h = 384;
+    cv::Mat resized;
+
+    Operate op;
+    // opencv 方式进行预处理
+    float scale;
+    cv::Rect paste_roi;
+    op.CvPadResize(input_image, resized_out_w, resized_out_h, scale, paste_roi, resized);
+    // cv::imshow("Resized", resized);
+    
+    cv::Mat input_float;
+    resized.convertTo(input_float, CV_32FC3, 1.0f / 255);
+    float *input_data = new float[resized.cols * resized.rows * resized.channels()];
+    cv::Mat channel_r(cv::Size(resized_out_w, resized_out_h), CV_32FC1, input_data);
+    cv::Mat channel_g(cv::Size(resized_out_w, resized_out_h), CV_32FC1, input_data + resized_out_w * resized_out_h);
+    cv::Mat channel_b(cv::Size(resized_out_w, resized_out_h), CV_32FC1, input_data + resized_out_w * resized_out_h * 2);
+    std::vector<cv::Mat> channels = {channel_b, channel_g, channel_r};
+    cv::split(input_float, channels);       // bgr
+    
+    // cuda 方式进行预处理
+    std::cout << "=================================" << std::endl;
+    uchar3* input_dev = nullptr;
+    float* output_dev = nullptr;
+    int input_bytes_size = height * width * sizeof(uchar3);
+    int output_bytes_size = resized_out_w * resized_out_h * c * sizeof(float);
+    cudaMalloc((void**)&input_dev, input_bytes_size);
+    cudaMalloc((void**)&output_dev, output_bytes_size);
+
+    // cv::imshow("cuda_input_image", input_image);
+    cudaMemcpy(input_dev, input_image.data, input_bytes_size, cudaMemcpyHostToDevice);
+
+    std::vector<int> means = {0, 0, 0};
+    std::vector<float> vars = {1.0f / 255, 1.0f / 255, 1.0f / 255};
+    float scale_g;
+    op.CvPadResizeGpu(input_dev, width, height, resized_out_w, resized_out_h, means, vars, scale_g, output_dev);
+
+    float* input_data_g = new float[resized_out_w * resized_out_h * c];
+    cudaMemcpy(input_data_g, output_dev, output_bytes_size, cudaMemcpyDeviceToHost);
+    cudaFree(input_dev);
+    cudaFree(output_dev);
+
+    // 判断是否一致
+    int data_size = resized_out_w * resized_out_h * c;
+    INFO_LOG("=====================");
+    for (size_t i = 0; i < data_size; i ++)
+    {
+        // std::cout << input_data[i] << std::endl;
+        // if (input_data_g[i])
+        // {
+        //     std::cout << input_data_g[i] << std::endl;
+        // }
+
+        if (input_data[i] != input_data_g[i])
+        {
+            INFO_LOG("opencv process [%zu] result is not equal with gpu process result [%0.4f != %0.4f]", i, input_data[i], input_data_g[i]);
+        }
+    }
+
+    delete[](input_data);
+    delete[](input_data_g);
+
     // cv::waitKey(0);
-    // cv::destroyAllWindows();
 }
 
 int main(int argc, char* argv[])
@@ -127,7 +200,8 @@ int main(int argc, char* argv[])
     // TestReduceSum(argc, argv);
     // TestMatrixAdd();
     // TestSparseMatrixTranspose();
-    TestCvResize();
+    // TestCvResize();
+    TestCvPadResizeNormal();
 
     return 0;
 }

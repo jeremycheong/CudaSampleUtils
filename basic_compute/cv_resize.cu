@@ -215,6 +215,8 @@ __global__ void PadBiLinearKernal(uchar3* src, int src_width, int src_height, uc
                                     + src[src_p00_x + 1 + src_width * src_p00_y].x * alph10
                                     + src[src_p00_x + src_width * (src_p00_y + 1)].x * alph01
                                     + src[src_p00_x + 1 + src_width * (src_p00_y + 1)].x * alph00;
+    // float dest_val = (dest[ix + dest_width * iy].x) * 1.0f / 255;
+    // printf("====>>> %0.4f", dest_val);
 
     dest[ix + dest_width * iy].y = src[src_p00_x + src_width * src_p00_y].y * alph11
                                     + src[src_p00_x + 1 + src_width * src_p00_y].y * alph10
@@ -239,8 +241,6 @@ Result Operate::CvPadResize(const cv::Mat &src, const uint32_t &dest_width, cons
     printf("src image width: %d, height: %d, channels: %d, step: %d\n", width, height, channel_num, step);
 
     dest.create(cv::Size(dest_width, dest_height), src.type());
-    cv::Vec3b fill_val(127, 127, 127);
-    dest.setTo(fill_val);
 
     PadResize(width, height, dest_width, dest_height, paste_roi, scale);
 
@@ -294,6 +294,97 @@ Result Operate::PadResize(const uint32_t &image_width, const uint32_t &image_hei
         dest_roi.width = std::round(image_width / scale);
         dest_roi.height = dest_height;
     }
+
+    return SUCCESS;
+}
+
+__global__ void PadResizeNormalKernal(uchar3* src, int src_width, int src_height, float* dest, int dest_width, int dest_height, int roi_width, int roi_height,
+                                    int mean_b, int mean_g, int mean_r, float var_b, float var_g, float var_r)
+{
+    int ix = threadIdx.x + blockIdx.x * blockDim.x;
+    int iy = threadIdx.y + blockIdx.y * blockDim.y;
+
+    if (ix >= roi_width || iy >= roi_height)
+    {
+        return;
+    }
+
+    float scale_x = (float)(src_width) / roi_width;
+    float scale_y = (float)(src_height) / roi_height;
+
+    float px = (ix + 0.5) * scale_x - 0.5;
+    float py = (iy + 0.5) * scale_y - 0.5;
+
+    int src_p00_x = std::floor(px);
+    if (src_p00_x < 0)
+    {
+        src_p00_x = 0;
+        px = 0;
+    }
+    if (src_p00_x >= src_width - 1)
+    {
+        src_p00_x = src_width - 2;
+        px = src_p00_x;
+    }
+
+    float dist_p_p00_x = px - src_p00_x;
+    float dist_p_p01_x = 1.f - dist_p_p00_x;
+
+    int src_p00_y = std::floor(py); 
+    if (src_p00_y < 0)
+    {
+        src_p00_y = 0;
+        py = 0;
+    }
+    if (src_p00_y >= src_height - 1)
+    {
+        src_p00_y = src_height - 2;
+        py = src_p00_y;
+    }
+
+    float dist_p_p00_y = py - src_p00_y;
+    float dist_p_p10_y = 1.f - dist_p_p00_y;
+
+    float alph00 = dist_p_p00_x * dist_p_p00_y; // 左上面积
+    float alph01 = dist_p_p01_x * dist_p_p00_y; // 右上面积
+    float alph10 = dist_p_p00_x * dist_p_p10_y; // 左下面积
+    float alph11 = dist_p_p01_x * dist_p_p10_y; // 右下面积
+
+    uchar dest_uint8_b = src[src_p00_x + src_width * src_p00_y].x * alph11
+                                    + src[src_p00_x + 1 + src_width * src_p00_y].x * alph10
+                                    + src[src_p00_x + src_width * (src_p00_y + 1)].x * alph01
+                                    + src[src_p00_x + 1 + src_width * (src_p00_y + 1)].x * alph00;
+    dest[ix + dest_width * iy + (dest_width * dest_height) * 2] = (dest_uint8_b - mean_b) * var_b;
+    // float dest_val = (dest_uint8_b - mean_b) * var_b;
+    // printf("=====>>> %d, %0.4f\n", dest_uint8_b, dest_val);
+
+    int dest_uint8_g = src[src_p00_x + src_width * src_p00_y].y * alph11
+                                    + src[src_p00_x + 1 + src_width * src_p00_y].y * alph10
+                                    + src[src_p00_x + src_width * (src_p00_y + 1)].y * alph01
+                                    + src[src_p00_x + 1 + src_width * (src_p00_y + 1)].y * alph00;
+    dest[ix + dest_width * iy + (dest_width * dest_height) * 1] = (dest_uint8_g - mean_g) * var_g;
+
+    int dest_uint8_r = src[src_p00_x + src_width * src_p00_y].z * alph11
+                                    + src[src_p00_x + 1 + src_width * src_p00_y].z * alph10
+                                    + src[src_p00_x + src_width * (src_p00_y + 1)].z * alph01
+                                    + src[src_p00_x + 1 + src_width * (src_p00_y + 1)].z * alph00;
+    dest[ix + dest_width * iy + (dest_width * dest_height) * 0] = (dest_uint8_r - mean_r) * var_r;
+}
+
+Result Operate::CvPadResizeGpu(uchar3 *src_dev, const uint32_t &src_width, const uint32_t &src_height,
+                       const uint32_t &dest_width, const uint32_t &dest_height, 
+                       const std::vector<int> &means, const std::vector<float> &vars, 
+                       float &scale, float *dest_dev)
+{
+    cv::Rect paste_roi;
+    PadResize(src_width, src_height, dest_width, dest_height, paste_roi, scale);
+    std::cout << paste_roi.width << ", " << paste_roi.height << std::endl;
+    std::cout << dest_width << ", " << dest_height << std::endl;
+
+    dim3 grid((dest_width - 1) / block_.x + 1, (dest_height - 1) / block_.y + 1);
+    PadResizeNormalKernal<<<grid, block_>>>(src_dev, src_width, src_height, dest_dev, dest_width, dest_height, 
+                                            paste_roi.width, paste_roi.height, means[2],means[1], means[0], vars[2], vars[1], vars[0]);
+    cudaDeviceSynchronize();
 
     return SUCCESS;
 }

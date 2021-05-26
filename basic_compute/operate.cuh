@@ -49,6 +49,16 @@ public:
     // 等比例resize和减均值除方差
     Result CvPadResize(const cv::Mat &src, const uint32_t &dest_width, const uint32_t &dest_height, 
                                     float &scale, cv::Rect &paste_roi, cv::Mat &dest);
+    /**
+     * 外部申请GPU资源
+     * 
+     */
+    Result CvPadResizeGpu(uchar3 *src_dev, const uint32_t &src_width, const uint32_t &src_height,
+                       const uint32_t &dest_width, const uint32_t &dest_height, 
+                       const std::vector<int> &means, const std::vector<float> &vars, 
+                       float &scale, float *dest_dev);
+
+    
 
 private:
     Result PadResize(const uint32_t &image_width, const uint32_t &image_height, const uint32_t &dest_width, const uint32_t &dest_height, 
